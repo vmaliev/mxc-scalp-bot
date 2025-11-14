@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MXC Scalp Bot - Web Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .form-control {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .status-box {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .card {
+            display: inline-block;
+            width: 30%;
+            min-width: 250px;
+            margin: 1%;
+            padding: 15px;
+            vertical-align: top;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .control-label {
+            min-width: 180px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MXC Scalp Bot - Web Control Panel</h1>
+        
+        <!-- Status Section -->
+        <div class="section">
+            <h2>Bot Status</h2>
+            <div class="status-box {{ 'status-active' if status['scalping_running'] else 'status-inactive' }}">
+                <strong>Scalping Strategy:</strong> 
+                <span>{{ 'ACTIVE' if status['scalping_running'] else 'INACTIVE' }}</span>
+            </div>
+            <div class="status-box {{ 'status-active' if status['range_running'] else 'status-inactive' }}">
+                <strong>Range Scalping Strategy:</strong> 
+                <span>{{ 'ACTIVE' if status['range_running'] else 'INACTIVE' }}</span>
+            </div>
+            <div class="status-box {{ 'status-active' if status['futures_running'] else 'status-inactive' }}">
+                <strong>Futures Strategy:</strong> 
+                <span>{{ 'ACTIVE' if status['futures_running'] else 'INACTIVE' }}</span>
+            </div>
+            <p><strong>Active Strategies:</strong> {{ status['active_strategies'] }}</p>
+            <p><strong>Trading Pairs:</strong> {{ ', '.join(status['trading_pairs']) if status['trading_pairs'] else 'None' }}</p>
+        </div>
+        
+        <!-- Strategy Control Section -->
+        <div class="section">
+            <h2>Strategy Controls</h2>
+            <div class="control-row">
+                <span class="control-label">Scalping Strategy:</span>
+                <button class="btn btn-success" onclick="toggleStrategy('scalp', 'start')">Start</button>
+                <button class="btn btn-danger" onclick="toggleStrategy('scalp', 'stop')">Stop</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">Range Scalping Strategy:</span>
+                <button class="btn btn-success" onclick="toggleStrategy('range', 'start')">Start</button>
+                <button class="btn btn-danger" onclick="toggleStrategy('range', 'stop')">Stop</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">Futures Strategy:</span>
+                <button class="btn btn-success" onclick="toggleStrategy('futures', 'start')">Start</button>
+                <button class="btn btn-danger" onclick="toggleStrategy('futures', 'stop')">Stop</button>
+            </div>
+        </div>
+        
+        <!-- Trading Pairs Section -->
+        <div class="section">
+            <h2>Trading Pairs</h2>
+            <div class="form-group">
+                <label for="pairs">Trading Pairs (comma-separated, e.g., BTCUSDT,ETHUSDT):</label>
+                <input type="text" class="form-control" id="pairs" placeholder="BTCUSDT,ETHUSDT">
+                <button class="btn" onclick="setPairs()">Set Pairs</button>
+            </div>
+        </div>
+        
+        <!-- Risk Management Section -->
+        <div class="section">
+            <h2>Risk Management</h2>
+            
+            <div class="control-row">
+                <label class="control-label" for="max_daily_loss">Max Daily Loss ($):</label>
+                <input type="number" class="form-control" id="max_daily_loss" value="{{ risk_params['max_daily_loss'] }}" step="0.01">
+                <button class="btn" onclick="updateRiskParam('max_daily_loss')">Update</button>
+            </div>
+            
+            <div class="control-row">
+                <label class="control-label" for="risk_per_trade">Risk Per Trade (%):</label>
+                <input type="number" class="form-control" id="risk_per_trade" value="{{ '{:.4f}'.format(risk_params['risk_per_trade']) }}" step="0.0001">
+                <button class="btn" onclick="updateRiskParam('risk_per_trade')">Update</button>
+            </div>
+            
+            <div class="control-row">
+                <label class="control-label" for="max_consecutive_losses">Max Consecutive Losses:</label>
+                <input type="number" class="form-control" id="max_consecutive_losses" value="{{ risk_params['max_consecutive_losses'] }}" step="1">
+                <button class="btn" onclick="updateRiskParam('max_consecutive_losses')">Update</button>
+            </div>
+            
+            <div class="control-row">
+                <label class="control-label" for="profit_target">Profit Target (%):</label>
+                <input type="number" class="form-control" id="profit_target" value="{{ '{:.4f}'.format(risk_params['profit_target']) }}" step="0.0001">
+                <button class="btn" onclick="updateRiskParam('profit_target')">Update</button>
+            </div>
+            
+            <div class="control-row">
+                <label class="control-label" for="stop_loss">Stop Loss (%):</label>
+                <input type="number" class="form-control" id="stop_loss" value="{{ '{:.4f}'.format(risk_params['stop_loss']) }}" step="0.0001">
+                <button class="btn" onclick="updateRiskParam('stop_loss')">Update</button>
+            </div>
+        </div>
+        
+        <!-- Position Size Section -->
+        <div class="section">
+            <h2>Position Sizing</h2>
+            <div class="control-row">
+                <label class="control-label" for="position_size">Max Position Size:</label>
+                <input type="number" class="form-control" id="position_size" value="{{ risk_params['max_position_size'] }}" step="0.01">
+                <button class="btn" onclick="setPositionSize()">Update Size</button>
+            </div>
+        </div>
+        
+        <!-- Metrics Preview -->
+        <div class="section">
+            <h2>Quick Metrics</h2>
+            <div id="metrics-preview">
+                <p>Loading metrics...</p>
+            </div>
+            <button class="btn" onclick="refreshMetrics()">Refresh Metrics</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to toggle strategies
+        function toggleStrategy(strategy, action) {
+            fetch(`/${action}_${strategy}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                // Refresh the page to update status
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error controlling strategy');
+            });
+        }
+
+        // Function to set trading pairs
+        function setPairs() {
+            const pairsInput = document.getElementById('pairs').value;
+            const formData = new FormData();
+            formData.append('pairs', pairsInput);
+
+            fetch('/set_pairs', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error setting pairs');
+            });
+        }
+
+        // Function to update risk parameters
+        function updateRiskParam(paramName) {
+            const value = document.getElementById(paramName).value;
+            const formData = new FormData();
+            formData.append(paramName, value);
+
+            fetch('/set_risk', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating risk parameter');
+            });
+        }
+
+        // Function to set position size
+        function setPositionSize() {
+            const size = document.getElementById('position_size').value;
+            const formData = new FormData();
+            formData.append('size', size);
+
+            fetch('/set_size', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating position size');
+            });
+        }
+
+        // Function to refresh metrics
+        function refreshMetrics() {
+            fetch('/metrics')
+            .then(response => response.json())
+            .then(data => {
+                const previewDiv = document.getElementById('metrics-preview');
+                
+                if (data.error) {
+                    previewDiv.innerHTML = `<p>Error loading metrics: ${data.error}</p>`;
+                } else {
+                    previewDiv.innerHTML = `
+                        <p><strong>Total Profit:</strong> ${data.total_profit.toFixed(4)}</p>
+                        <p><strong>Total Trades:</strong> ${data.total_trades}</p>
+                        <p><strong>Win Rate:</strong> ${(data.win_rate * 100).toFixed(2)}%</p>
+                        <p><strong>Best Trade:</strong> ${data.best_trade.toFixed(4)}</p>
+                        <p><strong>Worst Trade:</strong> ${data.worst_trade.toFixed(4)}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('metrics-preview').innerHTML = '<p>Error loading metrics</p>';
+            });
+        }
+
+        // Load metrics on page load
+        window.onload = function() {
+            refreshMetrics();
+        };
+    </script>
+</body>
+</html>
