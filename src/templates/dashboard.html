@@ -226,7 +226,35 @@
             </div>
         </div>
         
-        <!-- Metrics Preview -->
+        <!-- Exchange Data Section -->
+        <div class="section">
+            <h2>Exchange Data</h2>
+            <div id="balance-data">
+                <h3>Account Balance</h3>
+                <p>Loading balance...</p>
+            </div>
+            <button class="btn" onclick="getBalance()">Load Balance</button>
+            
+            <div id="orders-data">
+                <h3>Open Orders</h3>
+                <p>Loading orders...</p>
+            </div>
+            <button class="btn" onclick="getOpenOrders()">Load Open Orders</button>
+            
+            <div id="positions-data">
+                <h3>Positions</h3>
+                <p>Loading positions...</p>
+            </div>
+            <button class="btn" onclick="getPositions()">Load Positions</button>
+            
+            <div id="trades-data">
+                <h3>Last Trades</h3>
+                <p>Loading trades...</p>
+            </div>
+            <button class="btn" onclick="getLastTrades()">Load Last Trades</button>
+        </div>
+        
+        <!-- Quick Metrics -->
         <div class="section">
             <h2>Quick Metrics</h2>
             <div id="metrics-preview">
@@ -381,6 +409,147 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error setting credentials');
+            });
+        }
+
+        // Functions to get exchange data
+        function getBalance() {
+            fetch('/balance_data')
+            .then(response => response.json())
+            .then(data => {
+                const balanceDiv = document.getElementById('balance-data');
+                if (data.error) {
+                    balanceDiv.innerHTML = `<h3>Account Balance</h3><p>Error: ${data.error}</p>`;
+                } else {
+                    let balanceHtml = '<h3>Account Balance</h3><ul>';
+                    if (Array.isArray(data.balances) && data.balances.length > 0) {
+                        data.balances.forEach(balance => {
+                            if (parseFloat(balance.free) > 0 || parseFloat(balance.locked) > 0) {
+                                balanceHtml += `<li>${balance.asset}: Free: ${balance.free}, Locked: ${balance.locked}</li>`;
+                            }
+                        });
+                    } else if (typeof data === 'object') {
+                        Object.entries(data).forEach(([asset, amount]) => {
+                            if (typeof amount === 'object' && amount.free !== undefined) {
+                                if (parseFloat(amount.free) > 0 || parseFloat(amount.locked) > 0) {
+                                    balanceHtml += `<li>${asset}: Free: ${amount.free}, Locked: ${amount.locked}</li>`;
+                                }
+                            } else {
+                                balanceHtml += `<li>${asset}: ${amount}</li>`;
+                            }
+                        });
+                    }
+                    balanceHtml += '</ul>';
+                    balanceDiv.innerHTML = balanceHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('balance-data').innerHTML = '<h3>Account Balance</h3><p>Error loading balance</p>';
+            });
+        }
+
+        function getOpenOrders() {
+            fetch('/open_orders_data')
+            .then(response => response.json())
+            .then(data => {
+                const ordersDiv = document.getElementById('orders-data');
+                if (data.error) {
+                    ordersDiv.innerHTML = `<h3>Open Orders</h3><p>Error: ${data.error}</p>`;
+                } else {
+                    let ordersHtml = '<h3>Open Orders</h3><ul>';
+                    if (Array.isArray(data.orders) && data.orders.length > 0) {
+                        data.orders.forEach(order => {
+                            ordersHtml += `<li>
+                                ${order.symbol} | ${order.side} | ${order.type} | 
+                                Qty: ${order.origQty || order.quantity} | 
+                                Price: ${order.price || 'Market'} | 
+                                ID: ${order.orderId}
+                            </li>`;
+                        });
+                    } else if (data.orders) {
+                        ordersHtml += `<li>No open orders found</li>`;
+                    } else {
+                        ordersHtml += `<li>Orders: ${JSON.stringify(data)}</li>`;
+                    }
+                    ordersHtml += '</ul>';
+                    ordersDiv.innerHTML = ordersHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('orders-data').innerHTML = '<h3>Open Orders</h3><p>Error loading orders</p>';
+            });
+        }
+
+        function getPositions() {
+            fetch('/positions_data')
+            .then(response => response.json())
+            .then(data => {
+                const positionsDiv = document.getElementById('positions-data');
+                if (data.error) {
+                    positionsDiv.innerHTML = `<h3>Positions</h3><p>Error: ${data.error}</p>`;
+                } else {
+                    let positionsHtml = '<h3>Positions</h3><ul>';
+                    if (Array.isArray(data.positions) && data.positions.length > 0) {
+                        data.positions.forEach(position => {
+                            positionsHtml += `<li>
+                                ${position.symbol || 'N/A'} | 
+                                Side: ${position.side || 'N/A'} | 
+                                Size: ${position.positionAmt || position.size || 'N/A'} | 
+                                Entry: ${position.entryPrice || 'N/A'} | 
+                                PnL: ${position.unrealizedProfit || 'N/A'}
+                            </li>`;
+                        });
+                    } else if (data.positions) {
+                        positionsHtml += `<li>No positions found</li>`;
+                    } else {
+                        positionsHtml += `<li>Positions: ${JSON.stringify(data)}</li>`;
+                    }
+                    positionsHtml += '</ul>';
+                    positionsDiv.innerHTML = positionsHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('positions-data').innerHTML = '<h3>Positions</h3><p>Error loading positions</p>';
+            });
+        }
+
+        function getLastTrades() {
+            fetch('/trades_data')
+            .then(response => response.json())
+            .then(data => {
+                const tradesDiv = document.getElementById('trades-data');
+                if (data.error) {
+                    tradesDiv.innerHTML = `<h3>Last Trades</h3><p>Error: ${data.error}</p>`;
+                } else {
+                    let tradesHtml = '<h3>Last Trades</h3><ul>';
+                    if (Array.isArray(data.trades) && data.trades.length > 0) {
+                        // Show last 5 trades
+                        const recentTrades = data.trades.slice(0, 5);
+                        recentTrades.forEach(trade => {
+                            tradesHtml += `<li>
+                                ${trade.symbol || 'N/A'} | 
+                                ${trade.side || 'N/A'} | 
+                                Qty: ${trade.qty || trade.quantity || 'N/A'} | 
+                                Price: ${trade.price || 'N/A'} | 
+                                Time: ${new Date(parseInt(trade.time || trade.timestamp || 0)).toLocaleString()} | 
+                                Fee: ${trade.commission || 'N/A'} ${trade.commissionAsset || ''}
+                            </li>`;
+                        });
+                    } else if (data.trades) {
+                        tradesHtml += `<li>No recent trades found</li>`;
+                    } else {
+                        tradesHtml += `<li>Trades: ${JSON.stringify(data)}</li>`;
+                    }
+                    tradesHtml += '</ul>';
+                    tradesDiv.innerHTML = tradesHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('trades-data').innerHTML = '<h3>Last Trades</h3><p>Error loading trades</p>';
             });
         }
 

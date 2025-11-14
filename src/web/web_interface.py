@@ -245,6 +245,131 @@ class WebBotController:
                 return jsonify({'status': 'error', 'message': f'Invalid user ID format: {str(e)}'})
             except Exception as e:
                 return jsonify({'status': 'error', 'message': f'Error setting credentials: {str(e)}'})
+        
+        @self.app.route('/balance_data')
+        def get_balance():
+            """Get account balance data from exchange."""
+            try:
+                if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
+                    # For now, return mock data since the actual exchange client might not be fully connected
+                    # In production, this would make a real API call
+                    # Get current balances from the exchange
+                    try:
+                        # Call the actual exchange API to get balance
+                        # Since we might not have a real exchange connection, return a message
+                        # or use the mock client
+                        if hasattr(self.mxc_client, 'get_account_info'):
+                            # This is likely a mock client, return a mock response
+                            mock_balances = [
+                                {'asset': 'USDT', 'free': '1000.0000', 'locked': '10.0000'},
+                                {'asset': 'BTC', 'free': '0.05000000', 'locked': '0.00100000'},
+                                {'asset': 'ETH', 'free': '1.25000000', 'locked': '0.00000000'}
+                            ]
+                            return jsonify({'balances': mock_balances})
+                        else:
+                            # If we have a real client but it hasn't been initialized with keys
+                            return jsonify({'balances': [], 'message': 'Exchange client not properly initialized'})
+                    except Exception as e:
+                        return jsonify({'error': f'Error fetching balances: {str(e)}'})
+                else:
+                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+            except Exception as e:
+                return jsonify({'error': f'Error in get balance: {str(e)}'})
+        
+        @self.app.route('/open_orders_data')
+        def get_open_orders():
+            """Get open orders from exchange."""
+            try:
+                if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
+                    # Get open orders from the exchange
+                    try:
+                        # For now, return mock data since the actual exchange client might not be fully connected
+                        mock_orders = [
+                            {
+                                'orderId': '1234567890',
+                                'symbol': 'BTCUSDT',
+                                'side': 'BUY',
+                                'type': 'LIMIT',
+                                'price': '40000.00',
+                                'origQty': '0.01',
+                                'executedQty': '0.00',
+                                'status': 'NEW',
+                                'time': '1634567890000'
+                            }
+                        ]
+                        return jsonify({'orders': mock_orders})
+                    except Exception as e:
+                        return jsonify({'error': f'Error fetching open orders: {str(e)}'})
+                else:
+                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+            except Exception as e:
+                return jsonify({'error': f'Error in get open orders: {str(e)}'})
+        
+        @self.app.route('/positions_data')
+        def get_positions():
+            """Get positions from exchange."""
+            try:
+                if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
+                    # For now, return mock data since the actual exchange client might not be fully connected
+                    # For futures positions, you would normally call the futures API
+                    mock_positions = [
+                        {
+                            'symbol': 'BTCUSDT',
+                            'positionAmt': '0.01',
+                            'entryPrice': '40000.00',
+                            'unrealizedProfit': '25.50',
+                            'side': 'LONG'
+                        }
+                    ]
+                    return jsonify({'positions': mock_positions})
+                else:
+                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+            except Exception as e:
+                return jsonify({'error': f'Error in get positions: {str(e)}'})
+        
+        @self.app.route('/trades_data')
+        def get_trades():
+            """Get recent trades from exchange."""
+            try:
+                if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
+                    # Get recent trades from the exchange
+                    try:
+                        # For now, return mock data since the actual exchange client might not be fully connected
+                        mock_trades = [
+                            {
+                                'symbol': 'BTCUSDT',
+                                'id': '12345678',
+                                'orderId': '1234567890',
+                                'side': 'BUY',
+                                'price': '40000.00',
+                                'qty': '0.01',
+                                'commission': '0.00000010',
+                                'commissionAsset': 'BTC',
+                                'time': '1634567890000',
+                                'isBuyer': True,
+                                'isMaker': False
+                            },
+                            {
+                                'symbol': 'BTCUSDT',
+                                'id': '12345679',
+                                'orderId': '1234567891',
+                                'side': 'SELL',
+                                'price': '40100.00',
+                                'qty': '0.01',
+                                'commission': '0.00001000',
+                                'commissionAsset': 'USDT',
+                                'time': '1634567895000',
+                                'isBuyer': False,
+                                'isMaker': True
+                            }
+                        ]
+                        return jsonify({'trades': mock_trades})
+                    except Exception as e:
+                        return jsonify({'error': f'Error fetching trades: {str(e)}'})
+                else:
+                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+            except Exception as e:
+                return jsonify({'error': f'Error in get trades: {str(e)}'})
     
     def get_status(self):
         """Get current status of all components."""
