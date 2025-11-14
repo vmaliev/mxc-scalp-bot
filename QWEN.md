@@ -77,6 +77,7 @@ mxc-scalp-bot/
 - **Futures Trading Strategy**: Advanced futures trading with leverage and position management
 - **Pair Selection**: Dynamic trading pair configuration via Telegram and web interface
 - **Web Interface**: Complete web-based dashboard to control bot alongside Telegram
+- **API Credential Controls**: Set API keys and bot tokens through the web interface
 - **Risk Parameter Controls**: Adjust risk settings (daily loss, risk per trade, etc.) via both Telegram and web interface
 - **Position Size Controls**: Configure position sizing via both Telegram and web interface
 - **Real-Time Monitoring**: WebSocket integration for live market data

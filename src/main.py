@@ -101,15 +101,15 @@ class MXCScalpBot:
         )
         
         # Initialize web controller with access to all strategies
-        self.web_controller = WebBotController()
-        # Set the same strategies and components in the web controller
-        self.web_controller.scalping_strategy = self.scalping_strategy
-        self.web_controller.range_scalp_strategy = self.range_scalp_strategy
-        self.web_controller.futures_strategy = self.futures_strategy
-        self.web_controller.metrics_manager = self.metrics_manager
-        self.web_controller.risk_manager = self.risk_manager
-        self.web_controller.settings = self.settings
-        self.web_controller.mxc_client = self.mxc_client
+        self.web_controller = WebBotController(
+            scalping_strategy=self.scalping_strategy,
+            range_scalp_strategy=self.range_scalp_strategy,
+            futures_strategy=self.futures_strategy,
+            metrics_manager=self.metrics_manager,
+            risk_manager=self.risk_manager,
+            settings=self.settings,
+            mxc_client=self.mxc_client
+        )
         
         # Initialize trading pairs with default
         self.trading_pairs = [self.settings.default_symbol]

@@ -48,7 +48,8 @@ class WebBotController:
         def index():
             return render_template('dashboard.html', 
                                  status=self.get_status(),
-                                 risk_params=self.get_risk_parameters())
+                                 risk_params=self.get_risk_parameters(),
+                                 credentials=self.get_credentials_status())
         
         @self.app.route('/status')
         def status():
@@ -208,6 +209,42 @@ class WebBotController:
                 except Exception as e:
                     return jsonify({'error': f'Error retrieving metrics: {str(e)}'})
             return jsonify({'error': 'Metrics manager not available'})
+        
+        @self.app.route('/set_credentials', methods=['POST'])
+        def set_credentials():
+            """Set API credentials."""
+            try:
+                # Get form values
+                api_key = request.form.get('api_key', '').strip()
+                secret_key = request.form.get('secret_key', '').strip()
+                bot_token = request.form.get('bot_token', '').strip()
+                telegram_users = request.form.get('telegram_users', '').strip()
+                
+                # Update settings if values provided
+                if api_key and self.settings:
+                    self.settings.api_key = api_key
+                    os.environ['MXC_API_KEY'] = api_key  # Also update environment
+                    
+                if secret_key and self.settings:
+                    self.settings.secret_key = secret_key
+                    os.environ['MXC_SECRET_KEY'] = secret_key  # Also update environment
+                    
+                if bot_token and self.settings:
+                    self.settings.telegram_bot_token = bot_token
+                    os.environ['TELEGRAM_BOT_TOKEN'] = bot_token  # Also update environment
+                    
+                if telegram_users and self.settings:
+                    # Parse comma-separated user IDs
+                    user_ids = [int(uid.strip()) for uid in telegram_users.split(',') if uid.strip()]
+                    self.settings.telegram_authorized_users = user_ids
+                    os.environ['TELEGRAM_AUTHORIZED_USERS'] = ','.join(map(str, user_ids))  # Also update environment
+                
+                return jsonify({'status': 'success', 'message': 'API credentials updated successfully'})
+                
+            except ValueError as e:
+                return jsonify({'status': 'error', 'message': f'Invalid user ID format: {str(e)}'})
+            except Exception as e:
+                return jsonify({'status': 'error', 'message': f'Error setting credentials: {str(e)}'})
     
     def get_status(self):
         """Get current status of all components."""
@@ -280,6 +317,22 @@ class WebBotController:
                 'max_position_size': self.settings.max_position_size
             }
         return {}
+    
+    def get_credentials_status(self):
+        """Get current status of API credentials."""
+        if self.settings:
+            return {
+                'api_key_set': bool(getattr(self.settings, 'api_key', '')),
+                'secret_key_set': bool(getattr(self.settings, 'secret_key', '')),
+                'bot_token_set': bool(getattr(self.settings, 'telegram_bot_token', '')),
+                'authorized_users_count': len(getattr(self.settings, 'telegram_authorized_users', []))
+            }
+        return {
+            'api_key_set': False,
+            'secret_key_set': False,
+            'bot_token_set': False,
+            'authorized_users_count': 0
+        }
 
     def start_server(self, host='0.0.0.0', port=5000, debug=False):
         """Start the web server."""

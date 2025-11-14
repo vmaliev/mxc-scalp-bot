@@ -194,6 +194,28 @@
             </div>
         </div>
         
+        <!-- API Credentials Section -->
+        <div class="section">
+            <h2>API Credentials</h2>
+            <div class="control-row">
+                <label class="control-label" for="mxc_api_key">MXC API Key:</label>
+                <input type="password" class="form-control" id="mxc_api_key" placeholder="Enter your MXC API key">
+            </div>
+            <div class="control-row">
+                <label class="control-label" for="mxc_secret_key">MXC Secret Key:</label>
+                <input type="password" class="form-control" id="mxc_secret_key" placeholder="Enter your MXC Secret key">
+            </div>
+            <div class="control-row">
+                <label class="control-label" for="telegram_bot_token">Telegram Bot Token:</label>
+                <input type="password" class="form-control" id="telegram_bot_token" placeholder="Enter your Telegram bot token">
+            </div>
+            <div class="control-row">
+                <label class="control-label" for="telegram_users">Telegram User IDs:</label>
+                <input type="text" class="form-control" id="telegram_users" placeholder="Comma-separated user IDs" value="123456789">
+            </div>
+            <button class="btn" onclick="setApiCredentials()">Set Credentials</button>
+        </div>
+        
         <!-- Position Size Section -->
         <div class="section">
             <h2>Position Sizing</h2>
@@ -326,6 +348,39 @@
             .catch(error => {
                 console.error('Error:', error);
                 document.getElementById('metrics-preview').innerHTML = '<p>Error loading metrics</p>';
+            });
+        }
+
+        // Function to set API credentials
+        function setApiCredentials() {
+            const apiKey = document.getElementById('mxc_api_key').value;
+            const secretKey = document.getElementById('mxc_secret_key').value;
+            const botToken = document.getElementById('telegram_bot_token').value;
+            const telegramUsers = document.getElementById('telegram_users').value;
+
+            const formData = new FormData();
+            if (apiKey) formData.append('api_key', apiKey);
+            if (secretKey) formData.append('secret_key', secretKey);
+            if (botToken) formData.append('bot_token', botToken);
+            if (telegramUsers) formData.append('telegram_users', telegramUsers);
+
+            fetch('/set_credentials', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.status === 'success') {
+                    // Clear the password fields after successful submission
+                    document.getElementById('mxc_api_key').value = '';
+                    document.getElementById('mxc_secret_key').value = '';
+                    document.getElementById('telegram_bot_token').value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error setting credentials');
             });
         }
 
