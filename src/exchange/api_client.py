@@ -216,6 +216,10 @@ class MXCClient:
     async def get_account_info(self) -> Dict[str, Any]:
         """Get account information and balances."""
         try:
+            # Ensure we have API credentials
+            if not self.api_key or not self.secret_key:
+                raise ValueError("API Key and Secret Key are required for authenticated requests")
+            
             timestamp = int(time.time() * 1000)
             params_str = f"timestamp={timestamp}"
             signature = self._generate_signature(params_str)
@@ -232,9 +236,123 @@ class MXCClient:
 
     async def get_balance(self) -> Dict[str, Any]:
         """Get account balances."""
-        # Get account info and return just the balance portion
-        account_info = await self.get_account_info()
-        return account_info.get('balances', [])
+        try:
+            # Get account info and return just the balance portion
+            account_info = await self.get_account_info()
+            return account_info.get('balances', [])
+        except Exception as e:
+            self.logger.error(f"Error getting balance: {e}")
+            return []
+
+    async def get_open_orders(self, symbol: str = None) -> Dict[str, Any]:
+        """Get open orders for all or specific symbol."""
+        try:
+            # Ensure we have API credentials
+            if not self.api_key or not self.secret_key:
+                raise ValueError("API Key and Secret Key are required for authenticated requests")
+            
+            timestamp = int(time.time() * 1000)
+            params = {'timestamp': timestamp}
+            if symbol:
+                params['symbol'] = symbol
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/openOrders', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting open orders: {e}")
+            return {}
+
+    async def get_all_orders(self, symbol: str, limit: int = 500, start_time: int = None, end_time: int = None) -> Dict[str, Any]:
+        """Get all orders (including completed/cancelled) for a symbol."""
+        try:
+            # Ensure we have API credentials
+            if not self.api_key or not self.secret_key:
+                raise ValueError("API Key and Secret Key are required for authenticated requests")
+            
+            timestamp = int(time.time() * 1000)
+            
+            params = {
+                'timestamp': timestamp,
+                'symbol': symbol,
+                'limit': min(limit, 1000)  # Max 1000 orders
+            }
+            
+            if start_time:
+                params['startTime'] = start_time
+            if end_time:
+                params['endTime'] = end_time
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/allOrders', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting all orders: {e}")
+            return {}
+
+    async def get_my_trades(self, symbol: str, limit: int = 500) -> Dict[str, Any]:
+        """Get user's trade history."""
+        try:
+            # Ensure we have API credentials
+            if not self.api_key or not self.secret_key:
+                raise ValueError("API Key and Secret Key are required for authenticated requests")
+            
+            timestamp = int(time.time() * 1000)
+            
+            params = {
+                'timestamp': timestamp,
+                'symbol': symbol,
+                'limit': min(limit, 1000)  # Max 1000 trades
+            }
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/myTrades', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting my trades: {e}")
+            return {}
+
+    async def get_position_info(self) -> Dict[str, Any]:
+        """Get position information (for futures)."""
+        try:
+            # Note: MXC futures API might be different
+            # This is for spot accounts - for futures, use futures-specific endpoints
+            timestamp = int(time.time() * 1000)
+            params = {'timestamp': timestamp}
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            # For spot trading, we can get positions from account info
+            account_info = await self._make_request('GET', '/api/v3/account', params, signed=True)
+            
+            # Extract position-like data from account (holdings)
+            positions = []
+            if 'balances' in account_info:
+                for balance in account_info['balances']:
+                    if float(balance['free']) + float(balance['locked']) > 0:
+                        # This is simplified - in reality, position info comes from different endpoints
+                        positions.append({
+                            'asset': balance['asset'],
+                            'free': balance['free'],
+                            'locked': balance['locked']
+                        })
+            
+            return {'positions': positions}
+        except Exception as e:
+            self.logger.error(f"Error getting position info: {e}")
+            return {}
 
     async def get_open_orders(self, symbol: str = None) -> Dict[str, Any]:
         """Get open orders for all or specific symbol."""
