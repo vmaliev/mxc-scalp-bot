@@ -212,6 +212,114 @@ class MXCClient:
         
         return await self._make_request('GET', '/api/v3/depth', params)
     
+    # Account and Trading Related Methods
+    async def get_account_info(self) -> Dict[str, Any]:
+        """Get account information and balances."""
+        try:
+            timestamp = int(time.time() * 1000)
+            params_str = f"timestamp={timestamp}"
+            signature = self._generate_signature(params_str)
+            
+            params = {
+                'timestamp': timestamp,
+                'signature': signature
+            }
+            
+            return await self._make_request('GET', '/api/v3/account', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting account info: {e}")
+            return {}
+
+    async def get_balance(self) -> Dict[str, Any]:
+        """Get account balances."""
+        # Get account info and return just the balance portion
+        account_info = await self.get_account_info()
+        return account_info.get('balances', [])
+
+    async def get_open_orders(self, symbol: str = None) -> Dict[str, Any]:
+        """Get open orders for all or specific symbol."""
+        try:
+            timestamp = int(time.time() * 1000)
+            params = {'timestamp': timestamp}
+            if symbol:
+                params['symbol'] = symbol
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/openOrders', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting open orders: {e}")
+            return {}
+
+    async def get_all_orders(self, symbol: str, limit: int = 500, start_time: int = None, end_time: int = None) -> Dict[str, Any]:
+        """Get all orders (including completed/cancelled) for a symbol."""
+        try:
+            timestamp = int(time.time() * 1000)
+            
+            params = {
+                'timestamp': timestamp,
+                'symbol': symbol,
+                'limit': min(limit, 1000)  # Max 1000 orders
+            }
+            
+            if start_time:
+                params['startTime'] = start_time
+            if end_time:
+                params['endTime'] = end_time
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/allOrders', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting all orders: {e}")
+            return {}
+
+    async def get_my_trades(self, symbol: str, limit: int = 500) -> Dict[str, Any]:
+        """Get user's trade history."""
+        try:
+            timestamp = int(time.time() * 1000)
+            
+            params = {
+                'timestamp': timestamp,
+                'symbol': symbol,
+                'limit': min(limit, 1000)  # Max 1000 trades
+            }
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            return await self._make_request('GET', '/api/v3/myTrades', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting my trades: {e}")
+            return {}
+
+    async def get_position_info(self) -> Dict[str, Any]:
+        """Get position information (for futures)."""
+        try:
+            # Note: MXC uses different endpoints for futures
+            # This is a placeholder - actual implementation depends on specific futures API
+            timestamp = int(time.time() * 1000)
+            params = {'timestamp': timestamp}
+
+            # Construct the request string for signature
+            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
+            signature = self._generate_signature(params_str)
+            params['signature'] = signature
+
+            # This would be the futures account info endpoint - actual endpoint may differ
+            return await self._make_request('GET', '/api/v3/future/position', params, signed=True)
+        except Exception as e:
+            self.logger.error(f"Error getting position info: {e}")
+            return {}
+    
     # WebSocket Methods
     async def start_websocket(self):
         """Start WebSocket connection for real-time market data."""

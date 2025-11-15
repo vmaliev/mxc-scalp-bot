@@ -135,13 +135,22 @@ class MXCScalpBot:
             # Start the web interface in a separate thread
             if self.web_controller:
                 import threading
+                # Update the web controller with references to the exchange and strategies
+                self.web_controller.mxc_client = self.mxc_client
+                self.web_controller.scalping_strategy = self.scalping_strategy
+                self.web_controller.range_scalp_strategy = self.range_scalp_strategy
+                self.web_controller.futures_strategy = self.futures_strategy
+                self.web_controller.metrics_manager = self.metrics_manager
+                self.web_controller.risk_manager = self.risk_manager
+                self.web_controller.settings = self.settings
+                
                 web_thread = threading.Thread(
                     target=self.web_controller.start_server,
-                    kwargs={'host':'0.0.0.0', 'port': 5000, 'debug': False},
+                    kwargs={'host':'0.0.0.0', 'port': 5001, 'debug': False},
                     daemon=True  # Daemon thread will stop when main program exits
                 )
                 web_thread.start()
-                self.logger.info("Web interface started on http://0.0.0.0:5000")
+                self.logger.info("Web interface started on http://0.0.0.0:5001")
             
             # Keep the main thread running
             while True:
