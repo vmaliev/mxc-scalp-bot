@@ -13,6 +13,7 @@ from strategies.scalping_strategy import ScalpingStrategy
 from strategies.range_scalp_strategy import RangeScalpStrategy
 from strategies.futures_strategy import FuturesStrategy
 from telegram_bot.bot_handler import TelegramBot
+from telegram.error import InvalidToken
 from monitoring.logger import setup_logging
 from monitoring.metrics import MetricsManager
 from risk_management.risk_calculator import RiskManager
@@ -88,18 +89,26 @@ class MXCScalpBot:
         # Set the default strategy (can be changed via Telegram commands later)
         self.current_strategy = self.scalping_strategy
         
-        # Initialize Telegram bot with all strategies
-        self.telegram_bot = TelegramBot(
-            bot_token=self.settings.telegram_bot_token,
-            authorized_users=self.settings.telegram_authorized_users,
-            exchange_client=self.mxc_client,
-            scalping_strategy=self.scalping_strategy,
-            range_scalp_strategy=self.range_scalp_strategy,
-            futures_strategy=self.futures_strategy,
-            metrics_manager=self.metrics_manager,
-            risk_manager=self.risk_manager
-        )
-        
+        # Initialize Telegram bot only if credentials are available
+        self.telegram_bot = None
+        if self.settings.telegram_bot_token and self.settings.telegram_authorized_users:
+            try:
+                self.telegram_bot = TelegramBot(
+                    bot_token=self.settings.telegram_bot_token,
+                    authorized_users=self.settings.telegram_authorized_users,
+                    exchange_client=self.mxc_client,
+                    scalping_strategy=self.scalping_strategy,
+                    range_scalp_strategy=self.range_scalp_strategy,
+                    futures_strategy=self.futures_strategy,
+                    metrics_manager=self.metrics_manager,
+                    risk_manager=self.risk_manager
+                )
+            except InvalidToken as exc:
+                self.logger.warning("Invalid Telegram token provided: %s", exc)
+                self.logger.warning("Telegram controls disabled until a valid token is configured via the web UI.")
+        else:
+            self.logger.info("Telegram credentials not provided. Telegram controls will remain disabled until configured via the web UI.")
+
         # Initialize web controller with access to all strategies
         self.web_controller = WebBotController(
             scalping_strategy=self.scalping_strategy,
@@ -110,6 +119,12 @@ class MXCScalpBot:
             settings=self.settings,
             mxc_client=self.mxc_client
         )
+        try:
+            loop = asyncio.get_running_loop()
+            self.web_controller.set_event_loop(loop)
+        except RuntimeError:
+            # Fallback if no loop yet (shouldn't happen inside async context but safe guard)
+            pass
         
         # Initialize trading pairs with default
         self.trading_pairs = [self.settings.default_symbol]
@@ -129,8 +144,9 @@ class MXCScalpBot:
             if self.current_strategy:
                 self.current_strategy.start()
             
-            # Start the Telegram bot
-            await self.telegram_bot.start_polling()
+            # Start the Telegram bot if available
+            if self.telegram_bot:
+                await self.telegram_bot.start_polling()
             
             # Start the web interface in a separate thread
             if self.web_controller:

@@ -5,6 +5,10 @@ Integrates web interface with the existing bot system
 """
 import sys
 import os
+import asyncio
+import logging
+from concurrent.futures import TimeoutError as FuturesTimeout
+
 sys.path.insert(0, os.path.abspath('.'))
 
 from flask import Flask, render_template, request, jsonify
@@ -24,9 +28,10 @@ class WebBotController:
     Can work with existing components or initialize its own
     """
     
-    def __init__(self, scalping_strategy=None, range_scalp_strategy=None, 
-                 futures_strategy=None, metrics_manager=None, 
-                 risk_manager=None, settings=None, mxc_client=None):
+    def __init__(self, scalping_strategy=None, range_scalp_strategy=None,
+                 futures_strategy=None, metrics_manager=None,
+                 risk_manager=None, settings=None, mxc_client=None,
+                 event_loop: asyncio.AbstractEventLoop = None):
         # Initialize Flask app
         import os
         template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
@@ -41,6 +46,31 @@ class WebBotController:
         self.risk_manager = risk_manager
         self.settings = settings
         self.mxc_client = mxc_client
+        self.event_loop = event_loop
+        self.logger = logging.getLogger(__name__)
+
+    def set_event_loop(self, loop: asyncio.AbstractEventLoop):
+        """Assign the main bot asyncio loop for coroutines."""
+        self.event_loop = loop
+
+    def _run_async_task(self, coro, timeout: float = 15.0):
+        """Run MXC client coroutine on the main loop or a temporary loop."""
+        if coro is None:
+            return None
+
+        loop = self.event_loop
+        try:
+            if loop and loop.is_running():
+                future = asyncio.run_coroutine_threadsafe(coro, loop)
+                return future.result(timeout=timeout)
+            # Fallback for standalone usage
+            return asyncio.run(coro)
+        except FuturesTimeout:
+            raise TimeoutError("Timed out waiting for exchange response")
+        except RuntimeError as exc:
+            # If loop reference is invalid, fallback to running in a fresh loop
+            return asyncio.run(coro)
+
     
     def setup_routes(self):
         """Setup Flask routes."""
@@ -228,6 +258,7 @@ class WebBotController:
                 if secret_key and self.settings:
                     self.settings.secret_key = secret_key
                     os.environ['MXC_SECRET_KEY'] = secret_key  # Also update environment
+
                     
                 if bot_token and self.settings:
                     self.settings.telegram_bot_token = bot_token
@@ -238,7 +269,27 @@ class WebBotController:
                     user_ids = [int(uid.strip()) for uid in telegram_users.split(',') if uid.strip()]
                     self.settings.telegram_authorized_users = user_ids
                     os.environ['TELEGRAM_AUTHORIZED_USERS'] = ','.join(map(str, user_ids))  # Also update environment
+
+                # Update MXC client credentials immediately so exchange data works without restart
+                if self.mxc_client and (api_key or secret_key):
+                    try:
+                        self._run_async_task(
+                            self.mxc_client.update_credentials(
+                                api_key=api_key or None,
+                                secret_key=secret_key or None
+                            )
+                        )
+                        self.logger.info(
+                            "Updated MXC client credentials via web UI (api_key_set=%s, secret_key_set=%s)",
+                            bool(api_key), bool(secret_key)
+                        )
+                    except Exception as e:
+                        return jsonify({'status': 'error', 'message': f'Error updating MXC client: {str(e)}'})
                 
+                self.logger.info(
+                    "Credential update request processed (api_key=%s, secret_key=%s, bot_token=%s, users=%s)",
+                    bool(api_key), bool(secret_key), bool(bot_token), bool(telegram_users)
+                )
                 return jsonify({'status': 'success', 'message': 'API credentials updated successfully'})
                 
             except ValueError as e:
@@ -251,69 +302,75 @@ class WebBotController:
             """Get account balance data from exchange."""
             try:
                 if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
-                    # Get current balances from the exchange
                     try:
-                        # Call the actual exchange API to get balance
-                        import asyncio
-                        balances = asyncio.run(self.mxc_client.get_balance())
+                        self.logger.info("Fetching balance data from MXC")
+                        balances = self._run_async_task(self.mxc_client.get_balance()) or []
+                        self.logger.info("Balance data retrieved: %d entries", len(balances))
                         return jsonify({'balances': balances})
                     except Exception as e:
+                        self.logger.exception("Error fetching balances: %s", e)
                         return jsonify({'error': f'Error fetching balances: {str(e)}'})
-                else:
-                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+                return jsonify({'error': 'Exchange client not available or credentials not set'})
             except Exception as e:
                 return jsonify({'error': f'Error in get balance: {str(e)}'})
-        
+
         @self.app.route('/open_orders_data')
         def get_open_orders():
             """Get open orders from exchange."""
             try:
                 if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
-                    # Get open orders from the exchange
                     try:
-                        import asyncio
-                        # Default to BTCUSDT if no specific symbol is provided
-                        orders = asyncio.run(self.mxc_client.get_open_orders())
+                        symbol = getattr(self.settings, 'default_symbol', None)
+                        self.logger.info("Fetching open orders (symbol=%s)", symbol)
+                        orders = self._run_async_task(self.mxc_client.get_open_orders(symbol=symbol)) or []
+                        self.logger.info("Open orders retrieved: %s", len(orders) if isinstance(orders, list) else 'n/a')
                         return jsonify({'orders': orders})
                     except Exception as e:
+                        self.logger.exception("Error fetching open orders: %s", e)
                         return jsonify({'error': f'Error fetching open orders: {str(e)}'})
-                else:
-                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+                return jsonify({'error': 'Exchange client not available or credentials not set'})
             except Exception as e:
                 return jsonify({'error': f'Error in get open orders: {str(e)}'})
-        
+
         @self.app.route('/positions_data')
         def get_positions():
             """Get positions from exchange."""
             try:
                 if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
-                    # Get position information from the exchange
                     try:
-                        import asyncio
-                        positions = asyncio.run(self.mxc_client.get_position_info())
+                        self.logger.info("Fetching positions data")
+                        positions = self._run_async_task(self.mxc_client.get_position_info()) or {}
+                        # Ensure consistent shape {"positions": [...]}
+                        if isinstance(positions, dict):
+                            self.logger.info(
+                                "Positions retrieved: %d entries",
+                                len(positions.get('positions', []))
+                            )
+                            return jsonify(positions)
+                        self.logger.info("Positions retrieved (list): %d entries", len(positions))
                         return jsonify({'positions': positions})
                     except Exception as e:
+                        self.logger.exception("Error fetching positions: %s", e)
                         return jsonify({'error': f'Error fetching positions: {str(e)}'})
-                else:
-                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+                return jsonify({'error': 'Exchange client not available or credentials not set'})
             except Exception as e:
                 return jsonify({'error': f'Error in get positions: {str(e)}'})
-        
+
         @self.app.route('/trades_data')
         def get_trades():
             """Get recent trades from exchange."""
             try:
-                if self.mxc_client:
-                    # Get recent trades from the exchange
+                if self.mxc_client and self.settings and self.settings.api_key and self.settings.secret_key:
                     try:
-                        # Use a common trading pair for demo purposes
-                        import asyncio
-                        trades = asyncio.run(self.mxc_client.get_my_trades('BTCUSDT'))
+                        symbol = getattr(self.settings, 'default_symbol', 'BTCUSDT')
+                        self.logger.info("Fetching trades (symbol=%s)", symbol)
+                        trades = self._run_async_task(self.mxc_client.get_my_trades(symbol)) or []
+                        self.logger.info("Trades retrieved: %d entries", len(trades))
                         return jsonify({'trades': trades})
                     except Exception as e:
+                        self.logger.exception("Error fetching trades: %s", e)
                         return jsonify({'error': f'Error fetching trades: {str(e)}'})
-                else:
-                    return jsonify({'error': 'Exchange client not available or credentials not set'})
+                return jsonify({'error': 'Exchange client not available or credentials not set'})
             except Exception as e:
                 return jsonify({'error': f'Error in get trades: {str(e)}'})
     

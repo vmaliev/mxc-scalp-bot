@@ -49,6 +49,19 @@ class MXCClient:
                     'Content-Type': 'application/json'
                 }
             )
+
+    async def update_credentials(self, api_key: str = None, secret_key: str = None):
+        """Update API credentials at runtime and reset HTTP session."""
+        if api_key:
+            self.api_key = api_key
+        if secret_key:
+            self.secret_key = secret_key
+
+        if self.session:
+            try:
+                await self.session.close()
+            finally:
+                self.session = None
     
     def _generate_signature(self, query_string: str) -> str:
         """Generate HMAC SHA256 signature for API requests."""
@@ -92,17 +105,55 @@ class MXCClient:
             query_string = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
             signature = self._generate_signature(query_string)
             params['signature'] = signature
-        
+
+        log_params = {}
+        if params:
+            log_params = params.copy()
+            # Never log signature
+            log_params.pop('signature', None)
+        self.logger.info(
+            "MXC request %s %s | params=%s | signed=%s | api_key_set=%s",
+            method,
+            endpoint,
+            log_params,
+            signed,
+            bool(self.api_key)
+        )
+
         try:
             if method == 'GET':
                 async with self.session.get(url, params=params) as response:
-                    return await response.json()
+                    data = await response.json()
+                    self.logger.info(
+                        "MXC response %s %s | status=%s | body_preview=%s",
+                        method,
+                        endpoint,
+                        response.status,
+                        str(data)[:500]
+                    )
+                    return data
             elif method == 'POST':
                 async with self.session.post(url, json=params) as response:
-                    return await response.json()
+                    data = await response.json()
+                    self.logger.info(
+                        "MXC response %s %s | status=%s | body_preview=%s",
+                        method,
+                        endpoint,
+                        response.status,
+                        str(data)[:500]
+                    )
+                    return data
             elif method == 'DELETE':
                 async with self.session.delete(url, params=params) as response:
-                    return await response.json()
+                    data = await response.json()
+                    self.logger.info(
+                        "MXC response %s %s | status=%s | body_preview=%s",
+                        method,
+                        endpoint,
+                        response.status,
+                        str(data)[:500]
+                    )
+                    return data
         except Exception as e:
             self.logger.error(f"Error making request to {url}: {e}")
             raise
@@ -420,23 +471,32 @@ class MXCClient:
             return {}
 
     async def get_position_info(self) -> Dict[str, Any]:
-        """Get position information (for futures)."""
+        """Derive spot "positions" from account balances (fallback when futures API unavailable)."""
         try:
-            # Note: MXC uses different endpoints for futures
-            # This is a placeholder - actual implementation depends on specific futures API
-            timestamp = int(time.time() * 1000)
-            params = {'timestamp': timestamp}
+            account_info = await self.get_account_info()
+            balances = account_info.get('balances', []) if account_info else []
 
-            # Construct the request string for signature
-            params_str = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
-            signature = self._generate_signature(params_str)
-            params['signature'] = signature
+            positions = []
+            for balance in balances:
+                try:
+                    free = float(balance.get('free', 0))
+                    locked = float(balance.get('locked', 0))
+                except (TypeError, ValueError):
+                    free = locked = 0.0
 
-            # This would be the futures account info endpoint - actual endpoint may differ
-            return await self._make_request('GET', '/api/v3/future/position', params, signed=True)
+                total = free + locked
+                if total > 0:
+                    positions.append({
+                        'asset': balance.get('asset'),
+                        'free': balance.get('free'),
+                        'locked': balance.get('locked'),
+                        'total': total
+                    })
+
+            return {'positions': positions}
         except Exception as e:
             self.logger.error(f"Error getting position info: {e}")
-            return {}
+            return {'positions': []}
     
     # WebSocket Methods
     async def start_websocket(self):

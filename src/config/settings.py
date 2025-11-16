@@ -2,6 +2,7 @@
 Configuration settings for the MXC Scalp Trading Bot.
 """
 import os
+import warnings
 
 
 class Settings:
@@ -42,6 +43,7 @@ class Settings:
         self.websocket_reconnect_delay = int(os.getenv('WEBSOCKET_RECONNECT_DELAY', '5'))
         
         # Validation
+        self.missing_credentials = []
         self._validate()
     
     def _parse_authorized_users(self, users_str):
@@ -52,31 +54,38 @@ class Settings:
     
     def _validate(self):
         """Validate configuration settings."""
-        errors = []
-        
+        warnings_list = []
+        fatal_errors = []
+
         if not self.api_key:
-            errors.append("MXC_API_KEY is required")
-        
+            warnings_list.append("MXC_API_KEY is missing")
+
         if not self.secret_key:
-            errors.append("MXC_SECRET_KEY is required")
-        
+            warnings_list.append("MXC_SECRET_KEY is missing")
+
         if not self.telegram_bot_token:
-            errors.append("TELEGRAM_BOT_TOKEN is required")
-        
+            warnings_list.append("TELEGRAM_BOT_TOKEN is missing")
+
         if not self.telegram_authorized_users:
-            errors.append("TELEGRAM_AUTHORIZED_USERS is required")
-        
+            warnings_list.append("TELEGRAM_AUTHORIZED_USERS is missing")
+
         if self.scalp_profit_target <= 0:
-            errors.append("SCALP_PROFIT_TARGET must be positive")
-        
+            fatal_errors.append("SCALP_PROFIT_TARGET must be positive")
+
         if self.scalp_stop_loss <= 0:
-            errors.append("SCALP_STOP_LOSS must be positive")
-        
+            fatal_errors.append("SCALP_STOP_LOSS must be positive")
+
         if self.max_position_size <= 0:
-            errors.append("MAX_POSITION_SIZE must be positive")
-        
+            fatal_errors.append("MAX_POSITION_SIZE must be positive")
+
         if self.max_daily_loss <= 0:
-            errors.append("MAX_DAILY_LOSS must be positive")
-        
-        if errors:
-            raise ValueError("Configuration validation errors: {}".format(', '.join(errors)))
+            fatal_errors.append("MAX_DAILY_LOSS must be positive")
+
+        if fatal_errors:
+            raise ValueError("Configuration validation errors: {}".format(', '.join(fatal_errors)))
+
+        self.missing_credentials = warnings_list
+        if warnings_list:
+            warnings.warn(
+                "Missing credentials detected: {}. Web interface will be limited until updated.".format(', '.join(warnings_list))
+            )
