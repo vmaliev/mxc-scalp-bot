@@ -8,11 +8,11 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from strategies.base_strategy import BaseStrategy
-from exchange.api_client import MXCClient
-from monitoring.metrics import MetricsManager
-from strategies.indicators import Indicators
-from config.settings import Settings
+from src.strategies.base_strategy import BaseStrategy
+from src.exchange.api_client import MXCClient
+from src.monitoring.metrics import MetricsManager
+from src.strategies.indicators import Indicators
+from src.config.settings import Settings
 
 
 class FuturesStrategy(BaseStrategy):

@@ -11,10 +11,10 @@ from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.helpers import escape_markdown
 
-from exchange.api_client import MXCClient
-from strategies.scalping_strategy import ScalpingStrategy
-from monitoring.metrics import MetricsManager
-from config.settings import Settings
+from src.exchange.api_client import MXCClient
+from src.strategies.scalping_strategy import ScalpingStrategy
+from src.monitoring.metrics import MetricsManager
+from src.config.settings import Settings
 
 
 class TelegramBot:

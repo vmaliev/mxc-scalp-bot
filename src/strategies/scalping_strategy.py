@@ -9,12 +9,12 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from exchange.api_client import MXCClient
-from exchange.order_manager import OrderManager
-from monitoring.metrics import MetricsManager
-from config.settings import Settings
-from strategies.base_strategy import BaseStrategy
-from strategies.indicators import Indicators
+from src.exchange.api_client import MXCClient
+from src.exchange.order_manager import OrderManager
+from src.monitoring.metrics import MetricsManager
+from src.config.settings import Settings
+from src.strategies.base_strategy import BaseStrategy
+from src.strategies.indicators import Indicators
 
 
 class ScalpingStrategy(BaseStrategy):

@@ -6,8 +6,8 @@ Implements risk controls and management for the scalping bot
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
-from exchange.api_client import MXCClient
-from config.settings import Settings
+from src.exchange.api_client import MXCClient
+from src.config.settings import Settings
 
 
 class RiskManager:

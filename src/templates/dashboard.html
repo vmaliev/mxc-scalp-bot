@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,20 +12,23 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             color: #333;
             text-align: center;
             border-bottom: 2px solid #007bff;
             padding-bottom: 10px;
         }
+
         .section {
             margin: 20px 0;
             padding: 15px;
@@ -32,10 +36,12 @@
             border-radius: 5px;
             background-color: #f9f9f9;
         }
+
         .section h2 {
             margin-top: 0;
             color: #444;
         }
+
         .btn {
             background-color: #007bff;
             color: white;
@@ -46,45 +52,56 @@
             cursor: pointer;
             font-size: 14px;
         }
+
         .btn:hover {
             background-color: #0056b3;
         }
+
         .btn-danger {
             background-color: #dc3545;
         }
+
         .btn-danger:hover {
             background-color: #c82333;
         }
+
         .btn-success {
             background-color: #28a745;
         }
+
         .btn-success:hover {
             background-color: #218838;
         }
+
         .form-group {
             margin: 10px 0;
         }
+
         .form-control {
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
             width: 200px;
         }
+
         .status-box {
             padding: 10px;
             margin: 5px 0;
             border-radius: 4px;
         }
+
         .status-active {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
         .status-inactive {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
         .card {
             display: inline-block;
             width: 30%;
@@ -95,40 +112,44 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+
         .control-row {
             display: flex;
             align-items: center;
             margin: 10px 0;
         }
+
         .control-label {
             min-width: 180px;
             display: inline-block;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>MXC Scalp Bot - Web Control Panel</h1>
-        
+
         <!-- Status Section -->
         <div class="section">
             <h2>Bot Status</h2>
             <div class="status-box {{ 'status-active' if status['scalping_running'] else 'status-inactive' }}">
-                <strong>Scalping Strategy:</strong> 
+                <strong>Scalping Strategy:</strong>
                 <span>{{ 'ACTIVE' if status['scalping_running'] else 'INACTIVE' }}</span>
             </div>
             <div class="status-box {{ 'status-active' if status['range_running'] else 'status-inactive' }}">
-                <strong>Range Scalping Strategy:</strong> 
+                <strong>Range Scalping Strategy:</strong>
                 <span>{{ 'ACTIVE' if status['range_running'] else 'INACTIVE' }}</span>
             </div>
             <div class="status-box {{ 'status-active' if status['futures_running'] else 'status-inactive' }}">
-                <strong>Futures Strategy:</strong> 
+                <strong>Futures Strategy:</strong>
                 <span>{{ 'ACTIVE' if status['futures_running'] else 'INACTIVE' }}</span>
             </div>
             <p><strong>Active Strategies:</strong> {{ status['active_strategies'] }}</p>
-            <p><strong>Trading Pairs:</strong> {{ ', '.join(status['trading_pairs']) if status['trading_pairs'] else 'None' }}</p>
+            <p><strong>Trading Pairs:</strong> {{ ', '.join(status['trading_pairs']) if status['trading_pairs'] else
+                'None' }}</p>
         </div>
-        
+
         <!-- Strategy Control Section -->
         <div class="section">
             <h2>Strategy Controls</h2>
@@ -148,7 +169,7 @@
                 <button class="btn btn-danger" onclick="toggleStrategy('futures', 'stop')">Stop</button>
             </div>
         </div>
-        
+
         <!-- Trading Pairs Section -->
         <div class="section">
             <h2>Trading Pairs</h2>
@@ -158,45 +179,67 @@
                 <button class="btn" onclick="setPairs()">Set Pairs</button>
             </div>
         </div>
-        
+
         <!-- Risk Management Section -->
         <div class="section">
             <h2>Risk Management</h2>
-            
+
             <div class="control-row">
                 <label class="control-label" for="max_daily_loss">Max Daily Loss ($):</label>
-                <input type="number" class="form-control" id="max_daily_loss" value="{{ risk_params['max_daily_loss'] }}" step="0.01">
+                <input type="number" class="form-control" id="max_daily_loss"
+                    value="{{ risk_params['max_daily_loss'] }}" step="0.01">
                 <button class="btn" onclick="updateRiskParam('max_daily_loss')">Update</button>
             </div>
-            
+
             <div class="control-row">
                 <label class="control-label" for="risk_per_trade">Risk Per Trade (%):</label>
-                <input type="number" class="form-control" id="risk_per_trade" value="{{ '{:.4f}'.format(risk_params['risk_per_trade']) }}" step="0.0001">
+                <input type="number" class="form-control" id="risk_per_trade"
+                    value="{{ '{:.4f}'.format(risk_params['risk_per_trade']) }}" step="0.0001">
                 <button class="btn" onclick="updateRiskParam('risk_per_trade')">Update</button>
             </div>
-            
+
             <div class="control-row">
                 <label class="control-label" for="max_consecutive_losses">Max Consecutive Losses:</label>
-                <input type="number" class="form-control" id="max_consecutive_losses" value="{{ risk_params['max_consecutive_losses'] }}" step="1">
+                <input type="number" class="form-control" id="max_consecutive_losses"
+                    value="{{ risk_params['max_consecutive_losses'] }}" step="1">
                 <button class="btn" onclick="updateRiskParam('max_consecutive_losses')">Update</button>
             </div>
-            
+
             <div class="control-row">
                 <label class="control-label" for="profit_target">Profit Target (%):</label>
-                <input type="number" class="form-control" id="profit_target" value="{{ '{:.4f}'.format(risk_params['profit_target']) }}" step="0.0001">
+                <input type="number" class="form-control" id="profit_target"
+                    value="{{ '{:.4f}'.format(risk_params['profit_target']) }}" step="0.0001">
                 <button class="btn" onclick="updateRiskParam('profit_target')">Update</button>
             </div>
-            
+
             <div class="control-row">
                 <label class="control-label" for="stop_loss">Stop Loss (%):</label>
-                <input type="number" class="form-control" id="stop_loss" value="{{ '{:.4f}'.format(risk_params['stop_loss']) }}" step="0.0001">
+                <input type="number" class="form-control" id="stop_loss"
+                    value="{{ '{:.4f}'.format(risk_params['stop_loss']) }}" step="0.0001">
                 <button class="btn" onclick="updateRiskParam('stop_loss')">Update</button>
             </div>
         </div>
-        
+
         <!-- API Credentials Section -->
         <div class="section">
             <h2>API Credentials</h2>
+            <div
+                class="status-box {{ 'status-active' if credentials['api_key_set'] and credentials['secret_key_set'] else 'status-inactive' }}">
+                <strong>MXC API Status:</strong>
+                <span>{{ 'Configured ✓' if credentials['api_key_set'] and credentials['secret_key_set'] else 'Not
+                    Configured ✗' }}</span>
+            </div>
+            <div class="status-box {{ 'status-active' if credentials['bot_token_set'] else 'status-inactive' }}">
+                <strong>Telegram Bot Status:</strong>
+                <span>{{ 'Configured ✓' if credentials['bot_token_set'] else 'Not Configured ✗' }}</span>
+            </div>
+            {% if not credentials['api_key_set'] or not credentials['secret_key_set'] %}
+            <p
+                style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                ⚠️ <strong>Note:</strong> Exchange data features require valid MXC API credentials. Please configure
+                your API keys below.
+            </p>
+            {% endif %}
             <div class="control-row">
                 <label class="control-label" for="mxc_api_key">MXC API Key:</label>
                 <input type="password" class="form-control" id="mxc_api_key" placeholder="Enter your MXC API key">
@@ -207,53 +250,67 @@
             </div>
             <div class="control-row">
                 <label class="control-label" for="telegram_bot_token">Telegram Bot Token:</label>
-                <input type="password" class="form-control" id="telegram_bot_token" placeholder="Enter your Telegram bot token">
+                <input type="password" class="form-control" id="telegram_bot_token"
+                    placeholder="Enter your Telegram bot token">
             </div>
             <div class="control-row">
                 <label class="control-label" for="telegram_users">Telegram User IDs:</label>
-                <input type="text" class="form-control" id="telegram_users" placeholder="Comma-separated user IDs" value="123456789">
+                <input type="text" class="form-control" id="telegram_users" placeholder="Comma-separated user IDs"
+                    value="123456789">
             </div>
             <button class="btn" onclick="setApiCredentials()">Set Credentials</button>
+            <button class="btn btn-success" onclick="testCredentials()" style="margin-left: 10px;">Test
+                Credentials</button>
+            <div id="test-result" style="margin-top: 15px;"></div>
         </div>
-        
+
         <!-- Position Size Section -->
         <div class="section">
             <h2>Position Sizing</h2>
             <div class="control-row">
                 <label class="control-label" for="position_size">Max Position Size:</label>
-                <input type="number" class="form-control" id="position_size" value="{{ risk_params['max_position_size'] }}" step="0.01">
+                <input type="number" class="form-control" id="position_size"
+                    value="{{ risk_params['max_position_size'] }}" step="0.01">
                 <button class="btn" onclick="setPositionSize()">Update Size</button>
             </div>
         </div>
-        
+
         <!-- Exchange Data Section -->
         <div class="section">
             <h2>Exchange Data</h2>
+            {% if not credentials['api_key_set'] or not credentials['secret_key_set'] %}
+            <p
+                style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                🔒 <strong>Exchange data unavailable:</strong> Please configure your MXC API credentials in the section
+                above to view balance, orders, positions, and trades.
+            </p>
+            {% else %}
             <div id="balance-data">
                 <h3>Account Balance</h3>
-                <p>Loading balance...</p>
+                <p>Click "Load Balance" to fetch your account balance.</p>
             </div>
             <button class="btn" onclick="getBalance()">Load Balance</button>
-            
+
             <div id="orders-data">
                 <h3>Open Orders</h3>
-                <p>Loading orders...</p>
+                <p>Click "Load Open Orders" to fetch your open orders.</p>
             </div>
             <button class="btn" onclick="getOpenOrders()">Load Open Orders</button>
-            
+
             <div id="positions-data">
                 <h3>Positions</h3>
-                <p>Loading positions...</p>
+                <p>Click "Load Positions" to fetch your positions.</p>
             </div>
             <button class="btn" onclick="getPositions()">Load Positions</button>
-            
+
             <div id="trades-data">
                 <h3>Last Trades</h3>
-                <p>Loading trades...</p>
+                <p>Click "Load Last Trades" to fetch your recent trades.</p>
             </div>
             <button class="btn" onclick="getLastTrades()">Load Last Trades</button>
+            {% endif %}
         </div>
-        
+
         <!-- Quick Metrics -->
         <div class="section">
             <h2>Quick Metrics</h2>
@@ -273,16 +330,16 @@
                     'Content-Type': 'application/json',
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                // Refresh the page to update status
-                location.reload();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error controlling strategy');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    // Refresh the page to update status
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error controlling strategy');
+                });
         }
 
         // Function to set trading pairs
@@ -295,17 +352,17 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                if (data.status === 'success') {
-                    location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error setting pairs');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error setting pairs');
+                });
         }
 
         // Function to update risk parameters
@@ -318,17 +375,17 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                if (data.status === 'success') {
-                    location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating risk parameter');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating risk parameter');
+                });
         }
 
         // Function to set position size
@@ -341,42 +398,42 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                if (data.status === 'success') {
-                    location.reload();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating position size');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating position size');
+                });
         }
 
         // Function to refresh metrics
         function refreshMetrics() {
             fetch('/metrics')
-            .then(response => response.json())
-            .then(data => {
-                const previewDiv = document.getElementById('metrics-preview');
-                
-                if (data.error) {
-                    previewDiv.innerHTML = `<p>Error loading metrics: ${data.error}</p>`;
-                } else {
-                    previewDiv.innerHTML = `
+                .then(response => response.json())
+                .then(data => {
+                    const previewDiv = document.getElementById('metrics-preview');
+
+                    if (data.error) {
+                        previewDiv.innerHTML = `<p>Error loading metrics: ${data.error}</p>`;
+                    } else {
+                        previewDiv.innerHTML = `
                         <p><strong>Total Profit:</strong> ${data.total_profit.toFixed(4)}</p>
                         <p><strong>Total Trades:</strong> ${data.total_trades}</p>
                         <p><strong>Win Rate:</strong> ${(data.win_rate * 100).toFixed(2)}%</p>
                         <p><strong>Best Trade:</strong> ${data.best_trade.toFixed(4)}</p>
                         <p><strong>Worst Trade:</strong> ${data.worst_trade.toFixed(4)}</p>
                     `;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('metrics-preview').innerHTML = '<p>Error loading metrics</p>';
-            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('metrics-preview').innerHTML = '<p>Error loading metrics</p>';
+                });
         }
 
         // Function to set API credentials
@@ -396,140 +453,186 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                if (data.status === 'success') {
-                    // Clear the password fields after successful submission
-                    document.getElementById('mxc_api_key').value = '';
-                    document.getElementById('mxc_secret_key').value = '';
-                    document.getElementById('telegram_bot_token').value = '';
-                }
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.status === 'success') {
+                        // Clear the password fields after successful submission
+                        document.getElementById('mxc_api_key').value = '';
+                        document.getElementById('mxc_secret_key').value = '';
+                        document.getElementById('telegram_bot_token').value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error setting credentials');
+                });
+        }
+
+        // Function to test API credentials
+        function testCredentials() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = '<p style="color: #0066cc;">🔄 Testing credentials...</p>';
+
+            fetch('/test_credentials', {
+                method: 'POST'
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error setting credentials');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    let resultHtml = '';
+                    if (data.status === 'success') {
+                        resultHtml = `
+                        <div style="color: #155724; background-color: #d4edda; padding: 10px; border-radius: 4px; border: 1px solid #c3e6cb;">
+                            <strong>${data.message}</strong><br>
+                            ${data.details || ''}
+                        </div>
+                    `;
+                    } else if (data.status === 'warning') {
+                        resultHtml = `
+                        <div style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                            <strong>${data.message}</strong><br>
+                            ${data.details || ''}
+                        </div>
+                    `;
+                    } else {
+                        resultHtml = `
+                        <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                            <strong>❌ ${data.message}</strong><br>
+                            <pre style="white-space: pre-wrap; margin-top: 10px; font-size: 12px;">${data.details || ''}</pre>
+                        </div>
+                    `;
+                    }
+                    resultDiv.innerHTML = resultHtml;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('test-result').innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        <strong>❌ Test failed</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+                });
         }
 
         // Functions to get exchange data
         function getBalance() {
             fetch('/balance_data')
-            .then(response => response.json())
-            .then(data => {
-                const balanceDiv = document.getElementById('balance-data');
-                if (data.error) {
-                    balanceDiv.innerHTML = `<h3>Account Balance</h3><p>Error: ${data.error}</p>`;
-                } else {
-                    let balanceHtml = '<h3>Account Balance</h3><ul>';
-                    if (Array.isArray(data.balances) && data.balances.length > 0) {
-                        data.balances.forEach(balance => {
-                            if (parseFloat(balance.free) > 0 || parseFloat(balance.locked) > 0) {
-                                balanceHtml += `<li>${balance.asset}: Free: ${balance.free}, Locked: ${balance.locked}</li>`;
-                            }
-                        });
-                    } else if (typeof data === 'object') {
-                        Object.entries(data).forEach(([asset, amount]) => {
-                            if (typeof amount === 'object' && amount.free !== undefined) {
-                                if (parseFloat(amount.free) > 0 || parseFloat(amount.locked) > 0) {
-                                    balanceHtml += `<li>${asset}: Free: ${amount.free}, Locked: ${amount.locked}</li>`;
+                .then(response => response.json())
+                .then(data => {
+                    const balanceDiv = document.getElementById('balance-data');
+                    if (data.error) {
+                        balanceDiv.innerHTML = `<h3>Account Balance</h3><p>Error: ${data.error}</p>`;
+                    } else {
+                        let balanceHtml = '<h3>Account Balance</h3><ul>';
+                        if (Array.isArray(data.balances) && data.balances.length > 0) {
+                            data.balances.forEach(balance => {
+                                if (parseFloat(balance.free) > 0 || parseFloat(balance.locked) > 0) {
+                                    balanceHtml += `<li>${balance.asset}: Free: ${balance.free}, Locked: ${balance.locked}</li>`;
                                 }
-                            } else {
-                                balanceHtml += `<li>${asset}: ${amount}</li>`;
-                            }
-                        });
+                            });
+                        } else if (typeof data === 'object') {
+                            Object.entries(data).forEach(([asset, amount]) => {
+                                if (typeof amount === 'object' && amount.free !== undefined) {
+                                    if (parseFloat(amount.free) > 0 || parseFloat(amount.locked) > 0) {
+                                        balanceHtml += `<li>${asset}: Free: ${amount.free}, Locked: ${amount.locked}</li>`;
+                                    }
+                                } else {
+                                    balanceHtml += `<li>${asset}: ${amount}</li>`;
+                                }
+                            });
+                        }
+                        balanceHtml += '</ul>';
+                        balanceDiv.innerHTML = balanceHtml;
                     }
-                    balanceHtml += '</ul>';
-                    balanceDiv.innerHTML = balanceHtml;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('balance-data').innerHTML = '<h3>Account Balance</h3><p>Error loading balance</p>';
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('balance-data').innerHTML = '<h3>Account Balance</h3><p>Error loading balance</p>';
+                });
         }
 
         function getOpenOrders() {
             fetch('/open_orders_data')
-            .then(response => response.json())
-            .then(data => {
-                const ordersDiv = document.getElementById('orders-data');
-                if (data.error) {
-                    ordersDiv.innerHTML = `<h3>Open Orders</h3><p>Error: ${data.error}</p>`;
-                } else {
-                    let ordersHtml = '<h3>Open Orders</h3><ul>';
-                    if (Array.isArray(data.orders) && data.orders.length > 0) {
-                        data.orders.forEach(order => {
-                            ordersHtml += `<li>
+                .then(response => response.json())
+                .then(data => {
+                    const ordersDiv = document.getElementById('orders-data');
+                    if (data.error) {
+                        ordersDiv.innerHTML = `<h3>Open Orders</h3><p>Error: ${data.error}</p>`;
+                    } else {
+                        let ordersHtml = '<h3>Open Orders</h3><ul>';
+                        if (Array.isArray(data.orders) && data.orders.length > 0) {
+                            data.orders.forEach(order => {
+                                ordersHtml += `<li>
                                 ${order.symbol} | ${order.side} | ${order.type} | 
                                 Qty: ${order.origQty || order.quantity} | 
                                 Price: ${order.price || 'Market'} | 
                                 ID: ${order.orderId}
                             </li>`;
-                        });
-                    } else if (data.orders) {
-                        ordersHtml += `<li>No open orders found</li>`;
-                    } else {
-                        ordersHtml += `<li>Orders: ${JSON.stringify(data)}</li>`;
+                            });
+                        } else if (data.orders) {
+                            ordersHtml += `<li>No open orders found</li>`;
+                        } else {
+                            ordersHtml += `<li>Orders: ${JSON.stringify(data)}</li>`;
+                        }
+                        ordersHtml += '</ul>';
+                        ordersDiv.innerHTML = ordersHtml;
                     }
-                    ordersHtml += '</ul>';
-                    ordersDiv.innerHTML = ordersHtml;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('orders-data').innerHTML = '<h3>Open Orders</h3><p>Error loading orders</p>';
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('orders-data').innerHTML = '<h3>Open Orders</h3><p>Error loading orders</p>';
+                });
         }
 
         function getPositions() {
             fetch('/positions_data')
-            .then(response => response.json())
-            .then(data => {
-                const positionsDiv = document.getElementById('positions-data');
-                if (data.error) {
-                    positionsDiv.innerHTML = `<h3>Positions</h3><p>Error: ${data.error}</p>`;
-                } else {
-                    let positionsHtml = '<h3>Positions</h3><ul>';
-                    if (Array.isArray(data.positions) && data.positions.length > 0) {
-                        data.positions.forEach(position => {
-                            positionsHtml += `<li>
+                .then(response => response.json())
+                .then(data => {
+                    const positionsDiv = document.getElementById('positions-data');
+                    if (data.error) {
+                        positionsDiv.innerHTML = `<h3>Positions</h3><p>Error: ${data.error}</p>`;
+                    } else {
+                        let positionsHtml = '<h3>Positions</h3><ul>';
+                        if (Array.isArray(data.positions) && data.positions.length > 0) {
+                            data.positions.forEach(position => {
+                                positionsHtml += `<li>
                                 ${position.symbol || 'N/A'} | 
                                 Side: ${position.side || 'N/A'} | 
                                 Size: ${position.positionAmt || position.size || 'N/A'} | 
                                 Entry: ${position.entryPrice || 'N/A'} | 
                                 PnL: ${position.unrealizedProfit || 'N/A'}
                             </li>`;
-                        });
-                    } else if (data.positions) {
-                        positionsHtml += `<li>No positions found</li>`;
-                    } else {
-                        positionsHtml += `<li>Positions: ${JSON.stringify(data)}</li>`;
+                            });
+                        } else if (data.positions) {
+                            positionsHtml += `<li>No positions found</li>`;
+                        } else {
+                            positionsHtml += `<li>Positions: ${JSON.stringify(data)}</li>`;
+                        }
+                        positionsHtml += '</ul>';
+                        positionsDiv.innerHTML = positionsHtml;
                     }
-                    positionsHtml += '</ul>';
-                    positionsDiv.innerHTML = positionsHtml;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('positions-data').innerHTML = '<h3>Positions</h3><p>Error loading positions</p>';
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('positions-data').innerHTML = '<h3>Positions</h3><p>Error loading positions</p>';
+                });
         }
 
         function getLastTrades() {
             fetch('/trades_data')
-            .then(response => response.json())
-            .then(data => {
-                const tradesDiv = document.getElementById('trades-data');
-                if (data.error) {
-                    tradesDiv.innerHTML = `<h3>Last Trades</h3><p>Error: ${data.error}</p>`;
-                } else {
-                    let tradesHtml = '<h3>Last Trades</h3><ul>';
-                    if (Array.isArray(data.trades) && data.trades.length > 0) {
-                        // Show last 5 trades
-                        const recentTrades = data.trades.slice(0, 5);
-                        recentTrades.forEach(trade => {
-                            tradesHtml += `<li>
+                .then(response => response.json())
+                .then(data => {
+                    const tradesDiv = document.getElementById('trades-data');
+                    if (data.error) {
+                        tradesDiv.innerHTML = `<h3>Last Trades</h3><p>Error: ${data.error}</p>`;
+                    } else {
+                        let tradesHtml = '<h3>Last Trades</h3><ul>';
+                        if (Array.isArray(data.trades) && data.trades.length > 0) {
+                            // Show last 5 trades
+                            const recentTrades = data.trades.slice(0, 5);
+                            recentTrades.forEach(trade => {
+                                tradesHtml += `<li>
                                 ${trade.symbol || 'N/A'} | 
                                 ${trade.side || 'N/A'} | 
                                 Qty: ${trade.qty || trade.quantity || 'N/A'} | 
@@ -537,26 +640,27 @@
                                 Time: ${new Date(parseInt(trade.time || trade.timestamp || 0)).toLocaleString()} | 
                                 Fee: ${trade.commission || 'N/A'} ${trade.commissionAsset || ''}
                             </li>`;
-                        });
-                    } else if (data.trades) {
-                        tradesHtml += `<li>No recent trades found</li>`;
-                    } else {
-                        tradesHtml += `<li>Trades: ${JSON.stringify(data)}</li>`;
+                            });
+                        } else if (data.trades) {
+                            tradesHtml += `<li>No recent trades found</li>`;
+                        } else {
+                            tradesHtml += `<li>Trades: ${JSON.stringify(data)}</li>`;
+                        }
+                        tradesHtml += '</ul>';
+                        tradesDiv.innerHTML = tradesHtml;
                     }
-                    tradesHtml += '</ul>';
-                    tradesDiv.innerHTML = tradesHtml;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('trades-data').innerHTML = '<h3>Last Trades</h3><p>Error loading trades</p>';
-            });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('trades-data').innerHTML = '<h3>Last Trades</h3><p>Error loading trades</p>';
+                });
         }
 
         // Load metrics on page load
-        window.onload = function() {
+        window.onload = function () {
             refreshMetrics();
         };
     </script>
 </body>
+
 </html>

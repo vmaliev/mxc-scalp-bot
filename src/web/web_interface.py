@@ -13,13 +13,13 @@ sys.path.insert(0, os.path.abspath('.'))
 
 from flask import Flask, render_template, request, jsonify
 from threading import Thread
-from config.settings import Settings
-from exchange.api_client import MXCClient
-from strategies.scalping_strategy import ScalpingStrategy
-from strategies.range_scalp_strategy import RangeScalpStrategy
-from strategies.futures_strategy import FuturesStrategy
-from monitoring.metrics import MetricsManager
-from risk_management.risk_calculator import RiskManager
+from src.config.settings import Settings
+from src.exchange.api_client import MXCClient
+from src.strategies.scalping_strategy import ScalpingStrategy
+from src.strategies.range_scalp_strategy import RangeScalpStrategy
+from src.strategies.futures_strategy import FuturesStrategy
+from src.monitoring.metrics import MetricsManager
+from src.risk_management.risk_calculator import RiskManager
 
 
 class WebBotController:
@@ -296,6 +296,87 @@ class WebBotController:
                 return jsonify({'status': 'error', 'message': f'Invalid user ID format: {str(e)}'})
             except Exception as e:
                 return jsonify({'status': 'error', 'message': f'Error setting credentials: {str(e)}'})
+        
+        @self.app.route('/test_credentials', methods=['POST'])
+        def test_credentials():
+            """Test API credentials by making a simple request."""
+            try:
+                if not self.mxc_client or not self.settings:
+                    return jsonify({'status': 'error', 'message': 'MXC client not available'})
+                
+                if not self.settings.api_key or not self.settings.secret_key:
+                    return jsonify({'status': 'error', 'message': 'API credentials not configured'})
+                
+                self.logger.info("Testing API credentials...")
+                
+                # Test 1: Get server time (public endpoint - no auth required)
+                try:
+                    server_time_result = self._run_async_task(
+                        self.mxc_client._make_request('GET', '/api/v3/time', signed=False)
+                    )
+                    server_time_ok = 'serverTime' in server_time_result
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Failed to connect to MXC API: {str(e)}',
+                        'details': 'Cannot reach MXC servers. Check your internet connection.'
+                    })
+                
+                # Test 2: Get account info (requires valid credentials)
+                try:
+                    account_result = self._run_async_task(
+                        self.mxc_client.get_account_info()
+                    )
+                    
+                    if 'code' in account_result:
+                        # Error response from API
+                        error_code = account_result.get('code')
+                        error_msg = account_result.get('msg', 'Unknown error')
+                        
+                        if error_code == 700002:
+                            return jsonify({
+                                'status': 'error',
+                                'message': 'Invalid API signature',
+                                'details': 'Your API credentials appear to be incorrect. Please verify:\n1. API Key is correct\n2. Secret Key is correct\n3. No extra spaces or characters\n4. API key has proper permissions (Spot Trading enabled)'
+                            })
+                        elif error_code == 700001:
+                            return jsonify({
+                                'status': 'error',
+                                'message': 'Invalid API key',
+                                'details': 'The API key is not recognized. Please check if it\'s correct and not deleted.'
+                            })
+                        else:
+                            return jsonify({
+                                'status': 'error',
+                                'message': f'API Error {error_code}: {error_msg}',
+                                'details': 'Check MXC API documentation for this error code.'
+                            })
+                    
+                    # Success!
+                    if 'balances' in account_result:
+                        balance_count = len([b for b in account_result['balances'] 
+                                           if float(b.get('free', 0)) + float(b.get('locked', 0)) > 0])
+                        return jsonify({
+                            'status': 'success',
+                            'message': '✅ API credentials are valid!',
+                            'details': f'Successfully connected to your MXC account. Found {balance_count} assets with balance.'
+                        })
+                    else:
+                        return jsonify({
+                            'status': 'warning',
+                            'message': 'Connected but unexpected response',
+                            'details': 'API responded but format was unexpected. Credentials might be valid.'
+                        })
+                        
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'Error testing credentials: {str(e)}',
+                        'details': 'An unexpected error occurred during testing.'
+                    })
+                    
+            except Exception as e:
+                return jsonify({'status': 'error', 'message': f'Test failed: {str(e)}'})
         
         @self.app.route('/balance_data')
         def get_balance():

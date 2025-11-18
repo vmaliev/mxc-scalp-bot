@@ -3,10 +3,10 @@ Risk and Position Size Management Strategy
 
 This demonstrates how risk and size controls can be integrated with strategies.
 """
-from strategies.base_strategy import BaseStrategy
-from exchange.api_client import MXCClient
-from monitoring.metrics import MetricsManager
-from config.settings import Settings
+from src.strategies.base_strategy import BaseStrategy
+from src.exchange.api_client import MXCClient
+from src.monitoring.metrics import MetricsManager
+from src.config.settings import Settings
 
 
 class RiskSizeControl:

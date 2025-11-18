@@ -8,14 +8,14 @@ import threading
 import logging
 import os
 
-from config.settings import Settings
-from exchange.api_client import MXCClient
-from strategies.scalping_strategy import ScalpingStrategy
-from strategies.range_scalp_strategy import RangeScalpStrategy
-from strategies.futures_strategy import FuturesStrategy
-from telegram_bot.bot_handler import TelegramBot
-from monitoring.metrics import MetricsManager
-from risk_management.risk_calculator import RiskManager
+from src.config.settings import Settings
+from src.exchange.api_client import MXCClient
+from src.strategies.scalping_strategy import ScalpingStrategy
+from src.strategies.range_scalp_strategy import RangeScalpStrategy
+from src.strategies.futures_strategy import FuturesStrategy
+from src.telegram_bot.bot_handler import TelegramBot
+from src.monitoring.metrics import MetricsManager
+from src.risk_management.risk_calculator import RiskManager
 
 
 class WebController:

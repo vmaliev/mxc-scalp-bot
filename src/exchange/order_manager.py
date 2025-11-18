@@ -7,7 +7,7 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
-from exchange.api_client import MXCClient
+from src.exchange.api_client import MXCClient
 
 
 class OrderManager:
