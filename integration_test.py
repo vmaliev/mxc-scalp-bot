@@ -29,6 +29,7 @@ async def test_bot_component_integration():
         # Mock exchange client to avoid real API calls
         with patch('src.exchange.api_client.MXCClient') as mock_client_class:
             mock_client = AsyncMock()
+            mock_client.register_market_callback = MagicMock()
             mock_client_class.return_value = mock_client
             
             # Mock required methods

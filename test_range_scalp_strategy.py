@@ -25,6 +25,7 @@ class TestRangeScalpStrategy:
         })
         
         self.mock_client = AsyncMock()
+        self.mock_client.register_market_callback = MagicMock()
         self.metrics_manager = MetricsManager()
         self.settings = Settings()
         
